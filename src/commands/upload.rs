@@ -5,9 +5,10 @@ use std::{
     process::Command,
 };
 
+use arboard::Clipboard;
 use ffmpeg_sidecar::{
     command::FfmpegCommand,
-    ffprobe::{ffprobe_path, ffprobe_sidecar_path},
+    ffprobe::ffprobe_sidecar_path,
 };
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
@@ -28,7 +29,6 @@ struct UploadUrlResponse {
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 struct InsertUrlResponse {
-    message: String,
     video_url: String
 }
 
@@ -176,8 +176,12 @@ pub fn upload(file_path: &str) -> Result<String, Error> {
     match insert_response.status() {
         StatusCode::OK => {
             let raw_body = insert_response.text().unwrap_or_default();
-            serde_json::from_str::<InsertUrlResponse>(&raw_body)
+            let body = serde_json::from_str::<InsertUrlResponse>(&raw_body)
                 .map_err(|e| Error::new(ErrorKind::Other, format!("Failed to wrap JSON: {}", e)))?;
+            let mut clipboard = Clipboard::new().unwrap();
+            clipboard.set_text(&body.video_url).unwrap();
+            println!("Link copied to clipboard");
+            println!("{}", &body.video_url);
         }
         e => {
             return Err(Error::new(
@@ -187,5 +191,5 @@ pub fn upload(file_path: &str) -> Result<String, Error> {
         }
     }
 
-    Ok("Upload ok".to_string())
+    Ok("".to_string())
 }
