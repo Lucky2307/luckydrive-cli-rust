@@ -4,6 +4,7 @@ use ffmpeg_sidecar::paths::ffmpeg_path;
 mod commands;
 mod config;
 mod token;
+mod spinner;
 use crate::commands::{login::login, logout::logout, upload::upload};
 
 #[derive(Parser, Debug)]

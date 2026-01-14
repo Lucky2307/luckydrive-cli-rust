@@ -10,12 +10,12 @@ use ffmpeg_sidecar::{
     command::FfmpegCommand,
     ffprobe::ffprobe_sidecar_path,
 };
+use indicatif::ProgressBar;
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    config::{self, HTTP_CLIENT},
-    token::get_token,
+    config::{self, HTTP_CLIENT}, spinner::get_spinner, token::get_token
 };
 
 #[derive(Deserialize, Debug)]
@@ -130,13 +130,19 @@ fn put_file(token: &str, signed_url: &str, body: Vec<u8>) -> Result<(), Error> {
 }
 
 pub fn upload(file_path: &str) -> Result<String, Error> {
+    let token_spinner = get_spinner("Resolving token...".to_string());
     let token = get_token()?;
+    token_spinner();
+    
+    let metadata_spinner = get_spinner("Resolving video metadata...".to_string());
     let thumbnail = get_thumbnail(file_path)?;
-
     let video_metadata = fs::metadata(file_path)?;
     let upload_url = get_upload_url(&token, video_metadata.len(), thumbnail.len() as u64)?;
     let mut video = Vec::new();
     fs::File::open(&file_path)?.read_to_end(&mut video)?;
+    metadata_spinner();
+
+    let upload_spinner = get_spinner("Uploading files...".to_string());
     put_file(&token, &upload_url.video_upload_url, video)?;
     put_file(&token, &upload_url.thumbnail_upload_url, thumbnail)?;
 
@@ -172,6 +178,7 @@ pub fn upload(file_path: &str) -> Result<String, Error> {
                 Error::new(ErrorKind::Other, format!("Error: {}", e))
             }
         })?;
+    upload_spinner();
 
     match insert_response.status() {
         StatusCode::OK => {
