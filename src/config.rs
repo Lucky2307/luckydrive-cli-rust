@@ -1,5 +1,7 @@
+use std::env::var;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::LazyLock;
 
 use serde::{Deserialize, Serialize};
 
@@ -35,3 +37,6 @@ pub fn load_username() -> Result<String, String> {
     let config: Config = serde_json::from_str(&data).map_err(|e| e.to_string())?;
     Ok(config.username)
 }
+
+pub static API_ENDPOINT: LazyLock<String> = LazyLock::new(|| {var("API_ENDPOINT").expect("API_ENDPOINT not set")});
+pub static SERVICE_NAME: LazyLock<String> = LazyLock::new(|| {var("SERVICE_NAME").expect("SERVICE_NAME not set")});

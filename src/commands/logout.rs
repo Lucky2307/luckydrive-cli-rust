@@ -1,13 +1,14 @@
-use std::env::var;
+use std::io::{Error, ErrorKind};
 
-use keyring::Entry;
+use crate::token::delete_token;
 
-use crate::config;
-
-pub fn logout() -> Result<String, String> {
-    let service_name = var("SERVICE_NAME").expect("SERVICE_NAME not set");
-    let username = config::load_username().unwrap();
-    let entry = Entry::new(&service_name, &username).unwrap();
-    entry.delete_credential().unwrap();
-    Ok(format!("Logged out of {}", username))
+pub fn logout() -> Result<String, Error> {
+    delete_token().map_err(|e| {
+        if e.kind() == ErrorKind::NotFound {
+            Error::new(ErrorKind::NotFound, "Account not found")
+        } else {
+          Error::new(ErrorKind::Other, e)
+        }
+    })?;
+    Ok(format!("Logged out"))
 }

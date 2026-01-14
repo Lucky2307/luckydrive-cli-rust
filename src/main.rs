@@ -2,6 +2,7 @@ use clap::{Parser, Subcommand};
 use dotenv::dotenv;
 mod commands;
 mod config;
+mod token;
 use crate::commands::{login::login, logout::logout};
 
 #[derive(Parser, Debug)]
