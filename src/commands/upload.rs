@@ -6,16 +6,14 @@ use std::{
 };
 
 use arboard::Clipboard;
-use ffmpeg_sidecar::{
-    command::FfmpegCommand,
-    ffprobe::ffprobe_sidecar_path,
-};
-use indicatif::ProgressBar;
+use ffmpeg_sidecar::{command::FfmpegCommand, ffprobe::ffprobe_sidecar_path};
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    config::{self, HTTP_CLIENT}, spinner::get_spinner, token::get_token
+    config::{self, HTTP_CLIENT},
+    spinner::get_spinner,
+    token::get_token,
 };
 
 #[derive(Deserialize, Debug)]
@@ -29,7 +27,7 @@ struct UploadUrlResponse {
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 struct InsertUrlResponse {
-    video_url: String
+    video_url: String,
 }
 
 #[derive(Serialize, Debug)]
@@ -48,7 +46,11 @@ struct InsertPayload {
     size: u64,
 }
 
-fn get_upload_url(token: &str, video_size: u64, thumbnail_size: u64) -> Result<UploadUrlResponse, Error> {
+fn get_upload_url(
+    token: &str,
+    video_size: u64,
+    thumbnail_size: u64,
+) -> Result<UploadUrlResponse, Error> {
     let payload = UploadRequestPayload {
         video_size: video_size,
         thumbnail_size: thumbnail_size,
@@ -133,7 +135,7 @@ pub fn upload(file_path: &str) -> Result<String, Error> {
     let token_spinner = get_spinner("Resolving token...".to_string());
     let token = get_token()?;
     token_spinner();
-    
+
     let metadata_spinner = get_spinner("Resolving video metadata...".to_string());
     let thumbnail = get_thumbnail(file_path)?;
     let video_metadata = fs::metadata(file_path)?;
@@ -154,7 +156,9 @@ pub fn upload(file_path: &str) -> Result<String, Error> {
         .args(["-of", "default=noprint_wrappers=1:nokey=1"])
         .output()?;
     let duration = String::from_utf8_lossy(&duration_raw.stdout)
-        .split(".").next().unwrap()
+        .split(".")
+        .next()
+        .unwrap()
         .parse::<u64>()
         .map_err(|e| Error::new(ErrorKind::Other, e))?;
     let insert_payload = InsertPayload {

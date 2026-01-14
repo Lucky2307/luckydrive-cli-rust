@@ -3,8 +3,8 @@ use dotenv::dotenv;
 use ffmpeg_sidecar::paths::ffmpeg_path;
 mod commands;
 mod config;
-mod token;
 mod spinner;
+mod token;
 use crate::commands::{login::login, logout::logout, upload::upload};
 
 #[derive(Parser, Debug)]

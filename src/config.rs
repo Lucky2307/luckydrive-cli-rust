@@ -17,8 +17,12 @@ pub fn config_path() -> PathBuf {
         let default_config = Config {
             username: "".to_string(),
         };
-        fs::write(&path, serde_json::to_string_pretty(&default_config).unwrap()).unwrap();
-    }; 
+        fs::write(
+            &path,
+            serde_json::to_string_pretty(&default_config).unwrap(),
+        )
+        .unwrap();
+    };
     path
 }
 
@@ -39,7 +43,9 @@ pub fn load_username() -> Result<String, String> {
     Ok(config.username)
 }
 
-pub static API_ENDPOINT: LazyLock<String> = LazyLock::new(|| {var("API_ENDPOINT").expect("API_ENDPOINT not set")});
-pub static SERVICE_NAME: LazyLock<String> = LazyLock::new(|| {var("SERVICE_NAME").expect("SERVICE_NAME not set")});
+pub static API_ENDPOINT: LazyLock<String> =
+    LazyLock::new(|| var("API_ENDPOINT").expect("API_ENDPOINT not set"));
+pub static SERVICE_NAME: LazyLock<String> =
+    LazyLock::new(|| var("SERVICE_NAME").expect("SERVICE_NAME not set"));
 
 pub static HTTP_CLIENT: LazyLock<Client> = LazyLock::new(|| Client::new());

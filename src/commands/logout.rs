@@ -7,7 +7,7 @@ pub fn logout() -> Result<String, Error> {
         if e.kind() == ErrorKind::NotFound {
             Error::new(ErrorKind::NotFound, "Account not found")
         } else {
-          Error::new(ErrorKind::Other, e)
+            Error::new(ErrorKind::Other, e)
         }
     })?;
     Ok(format!("Logged out"))
