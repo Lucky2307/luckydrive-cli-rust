@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 clap = { version = "4.5.54", features = ["derive"] }
 dotenv = "0.15.0"
+ffmpeg-sidecar = "2.4.0"
 keyring = { version = "3.6.3", features = ["windows-native", "sync-secret-service", "linux-native"] }
 reqwest = { version = "0.13.1", features = ["blocking", "json"] }
 serde = { version = "1.0.228", features = ["derive"] }

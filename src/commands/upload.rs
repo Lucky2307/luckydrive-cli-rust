@@ -1,56 +1,191 @@
-use reqwest::blocking::Client;
+use std::{
+    fs,
+    io::{Error, ErrorKind, Read},
+    path::Path,
+    process::Command,
+};
+
+use ffmpeg_sidecar::{
+    command::FfmpegCommand,
+    ffprobe::{ffprobe_path, ffprobe_sidecar_path},
+};
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 
-use crate::config;
+use crate::{
+    config::{self, HTTP_CLIENT},
+    token::get_token,
+};
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct UploadUrl {
+struct UploadUrlResponse {
     video_id: String,
     video_upload_url: String,
     thumbnail_upload_url: String,
 }
 
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+struct InsertUrlResponse {
+    message: String,
+    video_url: String
+}
+
 #[derive(Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 struct UploadRequestPayload {
-    video_size: u32,
-    thumbnail_size: u32,
+    video_size: u64,
+    thumbnail_size: u64,
 }
 
-fn get_upload_url(token: &str, video_size: u32, thumbnail_size: u32) -> Result<UploadUrl, String> {
-    let client = Client::new();
+#[derive(Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
+struct InsertPayload {
+    video_id: String,
+    file_name: String,
+    duration: u64,
+    size: u64,
+}
+
+fn get_upload_url(token: &str, video_size: u64, thumbnail_size: u64) -> Result<UploadUrlResponse, Error> {
     let payload = UploadRequestPayload {
         video_size: video_size,
         thumbnail_size: thumbnail_size,
     };
 
-    let response = client
+    let response = HTTP_CLIENT
         .post(format!("{}/api/upload", *config::API_ENDPOINT))
         .header("token", token)
         .json(&serde_json::json!(payload))
         .send()
         .map_err(|e| {
             if e.is_timeout() {
-                "Request timed out".to_string()
+                Error::new(ErrorKind::TimedOut, "Request timed out")
             } else if e.is_connect() {
-                "Cannot connect to server".to_string()
+                Error::new(ErrorKind::NotConnected, "Cannot connect to server")
             } else {
-                format!("Error: {}", e)
+                Error::new(ErrorKind::Other, format!("Error: {}", e))
             }
         })?;
 
     match response.status() {
-      StatusCode::OK => {
-          let raw_body = response.text().unwrap_or_default();
-          serde_json::from_str::<UploadUrl>(&raw_body).map_err(|e| format!("Failed to unwrap JSON: {}", e))
-      }
-      e => return Err(format!("Failed requesting upload url: {}", e))
+        StatusCode::OK => {
+            let raw_body = response.text().unwrap_or_default();
+            serde_json::from_str::<UploadUrlResponse>(&raw_body)
+                .map_err(|e| Error::new(ErrorKind::Other, format!("Failed to wrap JSON: {}", e)))
+        }
+        e => {
+            return Err(Error::new(
+                ErrorKind::Other,
+                format!("Failed requesting upload url: {}", e),
+            ));
+        }
     }
 }
 
-// pub fn upload(file_path: &str) -> Result<String, String> {
-  
-//   let upload_url = get_upload_url(token, video_size, thumbnail_size);
-// }
+fn get_thumbnail(file_path: &str) -> Result<Vec<u8>, Error> {
+    let mut thumbnail = FfmpegCommand::new()
+        .input(file_path)
+        .arg("-vf")
+        .arg("thumbnail,scale=480:-1")
+        .frames(1)
+        .format("image2pipe")
+        .codec_video("mjpeg")
+        .pipe_stdout()
+        .spawn()?;
+
+    let mut jpeg_bytes = Vec::new();
+    thumbnail
+        .take_stdout()
+        .unwrap()
+        .read_to_end(&mut jpeg_bytes)?;
+
+    Ok(jpeg_bytes)
+}
+
+fn put_file(token: &str, signed_url: &str, body: Vec<u8>) -> Result<(), Error> {
+    let response = HTTP_CLIENT
+        .put(signed_url)
+        .header("token", token)
+        .body(body)
+        .send()
+        .map_err(|e| {
+            if e.is_timeout() {
+                Error::new(ErrorKind::TimedOut, "Request timed out")
+            } else if e.is_connect() {
+                Error::new(ErrorKind::NotConnected, "Cannot connect to server")
+            } else {
+                Error::new(ErrorKind::Other, format!("Error: {}", e))
+            }
+        })?;
+
+    match response.status() {
+        StatusCode::OK => Ok(()),
+        e => Err(Error::new(
+            ErrorKind::Other,
+            format!("Error uploading file: {}", e),
+        )),
+    }
+}
+
+pub fn upload(file_path: &str) -> Result<String, Error> {
+    let token = get_token()?;
+    let thumbnail = get_thumbnail(file_path)?;
+
+    let video_metadata = fs::metadata(file_path)?;
+    let upload_url = get_upload_url(&token, video_metadata.len(), thumbnail.len() as u64)?;
+    let mut video = Vec::new();
+    fs::File::open(&file_path)?.read_to_end(&mut video)?;
+    put_file(&token, &upload_url.video_upload_url, video)?;
+    put_file(&token, &upload_url.thumbnail_upload_url, thumbnail)?;
+
+    let file_name = format!("{}", Path::new(&file_path).file_name().unwrap().display());
+    let duration_raw = Command::new(ffprobe_sidecar_path().unwrap())
+        .args(["-i", &file_path])
+        .args(["-show_entries", "format=duration"])
+        .args(["-v", "error"])
+        .args(["-of", "default=noprint_wrappers=1:nokey=1"])
+        .output()?;
+    let duration = String::from_utf8_lossy(&duration_raw.stdout)
+        .split(".").next().unwrap()
+        .parse::<u64>()
+        .map_err(|e| Error::new(ErrorKind::Other, e))?;
+    let insert_payload = InsertPayload {
+        video_id: upload_url.video_id,
+        file_name: file_name,
+        duration: duration,
+        size: video_metadata.len(),
+    };
+
+    let insert_response = HTTP_CLIENT
+        .post(format!("{}/api/insert", *config::API_ENDPOINT))
+        .header("token", &token)
+        .json(&serde_json::json!(insert_payload))
+        .send()
+        .map_err(|e| {
+            if e.is_timeout() {
+                Error::new(ErrorKind::TimedOut, "Request timed out")
+            } else if e.is_connect() {
+                Error::new(ErrorKind::NotConnected, "Cannot connect to server")
+            } else {
+                Error::new(ErrorKind::Other, format!("Error: {}", e))
+            }
+        })?;
+
+    match insert_response.status() {
+        StatusCode::OK => {
+            let raw_body = insert_response.text().unwrap_or_default();
+            serde_json::from_str::<InsertUrlResponse>(&raw_body)
+                .map_err(|e| Error::new(ErrorKind::Other, format!("Failed to wrap JSON: {}", e)))?;
+        }
+        e => {
+            return Err(Error::new(
+                ErrorKind::Other,
+                format!("Error inserting video: {}", e),
+            ));
+        }
+    }
+
+    Ok("Upload ok".to_string())
+}
