@@ -26,3 +26,4 @@ jobs:
           RUSTTARGET: ${{ matrix.target }}
           EXTRA_FILES: ".dist/ffmpeg .dist/ffprobe"
           ARCHIVE_TYPES: ${{ matrix.archive }}
+          TOOLCHAIN_VERSION: "1.92.0"
