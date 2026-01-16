@@ -1,6 +1,6 @@
-use std::env::var;
+use std::env::{current_exe, var};
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::LazyLock;
 
 use reqwest::blocking::Client;
@@ -12,7 +12,7 @@ pub struct Config {
 }
 
 pub fn config_path() -> PathBuf {
-    let path = Path::new("./.config").to_path_buf();
+    let path = current_exe().unwrap().parent().unwrap().join(".config");
     if !path.exists() {
         let default_config = Config {
             username: "".to_string(),
