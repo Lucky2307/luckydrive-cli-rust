@@ -1,3 +1,5 @@
+use std::panic;
+
 use clap::{Parser, Subcommand};
 use dotenv::dotenv;
 use ffmpeg_sidecar::{ffprobe::ffprobe_path, paths::ffmpeg_path};
@@ -33,6 +35,9 @@ enum Commands {
     Upload { file_path: String },
 }
 fn main() {
+    panic::set_hook(Box::new(|info| {
+        eprintln!("Application panicked: {}", info.payload_as_str().unwrap());
+    }));
     dotenv().ok();
     ffmpeg_path();
     let cli = Cli::parse();
