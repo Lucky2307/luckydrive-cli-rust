@@ -1,8 +1,9 @@
-use std::env::{current_exe, var};
+use std::env::var;
 use std::fs;
 use std::path::PathBuf;
 use std::sync::LazyLock;
 
+use directories::ProjectDirs;
 use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
 
@@ -12,11 +13,16 @@ pub struct Config {
 }
 
 pub fn config_path() -> PathBuf {
-    let path = current_exe().unwrap().parent().unwrap().join(".config");
+    let path = ProjectDirs::from("", &SERVICE_NAME, &SERVICE_NAME)
+        .unwrap()
+        .config_dir()
+        .to_path_buf()
+        .join(".config");
     if !path.exists() {
         let default_config = Config {
             username: "".to_string(),
         };
+        fs::create_dir_all(&path.parent().unwrap()).ok();
         fs::write(
             &path,
             serde_json::to_string_pretty(&default_config).unwrap(),
