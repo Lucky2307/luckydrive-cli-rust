@@ -19,6 +19,8 @@ jobs:
             target: x86_64-pc-windows-msvc
 
     runs-on: ${{ matrix.platform.runs-on }}
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
