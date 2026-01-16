@@ -26,6 +26,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           RUSTTARGET: ${{ matrix.target }}
-          EXTRA_FILES: ".dist/ffmpeg .dist/ffprobe"
+          EXTRA_FILES: "ffmpeg ffprobe"
           ARCHIVE_TYPES: ${{ matrix.archive }}
           TOOLCHAIN_VERSION: "1.92.0"
+          PRE_BUILD: "scripts/PRE_BUILD.sh"
