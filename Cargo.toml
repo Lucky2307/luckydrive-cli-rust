@@ -1,5 +1,5 @@
 [package]
-name = "luckydrive-cli-rust"
+name = "luckydrive-cli"
 version = "0.1.0"
 edition = "2024"
 
