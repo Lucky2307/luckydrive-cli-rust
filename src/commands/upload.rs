@@ -11,9 +11,7 @@ use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    config::{self, HTTP_CLIENT},
-    spinner::get_spinner,
-    token::get_token,
+    commands::login::login, config::{self, HTTP_CLIENT}, spinner::get_spinner, token::get_token
 };
 
 #[derive(Deserialize, Debug)]
@@ -133,7 +131,13 @@ fn put_file(token: &str, signed_url: &str, body: Vec<u8>) -> Result<(), Error> {
 
 pub fn upload(file_path: &str) -> Result<String, Error> {
     let token_spinner = get_spinner("Resolving token...".to_string());
-    let token = get_token()?;
+    let token = match get_token() {
+        Ok(token) => token,
+        Err(e) => match e.kind() {
+            ErrorKind::NotFound => return Err(Error::new(ErrorKind::NotFound, "Token not found, try logging in first with login command")),
+            other => return Err(Error::new(other, e.to_string()))
+        }
+    };
     token_spinner();
 
     let metadata_spinner = get_spinner("Resolving video metadata...".to_string());
