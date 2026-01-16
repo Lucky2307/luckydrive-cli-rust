@@ -1,3 +1,5 @@
+#!/bin/bash
+
 apk add --nocache xz-static dbus-dev pkgconf
 
 mv .dist/ffmpeg .
