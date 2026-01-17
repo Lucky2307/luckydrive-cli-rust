@@ -36,4 +36,4 @@ jobs:
         with:
           executable-name: luckydrive-cli
           target: ${{ matrix.platform.target }}
-          extra-files: ".dist/ffmpeg\n.dist/ffprobe"
+          extra-files: ".dist/${{ matrix.platform.os-name }}/*"
