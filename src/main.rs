@@ -1,7 +1,6 @@
 use std::panic;
 
 use clap::{Parser, Subcommand};
-use dotenv::dotenv;
 use ffmpeg_sidecar::{ffprobe::ffprobe_path, paths::ffmpeg_path};
 mod commands;
 mod config;
@@ -38,7 +37,7 @@ fn main() {
     panic::set_hook(Box::new(|info| {
         eprintln!("Application panicked: {}", info.payload_as_str().unwrap());
     }));
-    dotenv().ok();
+
     ffmpeg_path();
     let cli = Cli::parse();
     if cli.ffmpeg_version {

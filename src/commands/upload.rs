@@ -150,12 +150,12 @@ pub fn upload(file_path: &str) -> Result<String, Error> {
     let metadata_spinner = get_spinner("Resolving video metadata...".to_string());
     let thumbnail = get_thumbnail(file_path)?;
     let video_metadata = fs::metadata(file_path)?;
-    let upload_url = get_upload_url(&token, video_metadata.len(), thumbnail.len() as u64)?;
     let mut video = Vec::new();
     fs::File::open(&file_path)?.read_to_end(&mut video)?;
     metadata_spinner();
-
+    
     let upload_spinner = get_spinner("Uploading files...".to_string());
+    let upload_url = get_upload_url(&token, video_metadata.len(), thumbnail.len() as u64)?;
     put_file(&token, &upload_url.video_upload_url, video)?;
     put_file(&token, &upload_url.thumbnail_upload_url, thumbnail)?;
 

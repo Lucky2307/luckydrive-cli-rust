@@ -7,12 +7,15 @@ edition = "2024"
 arboard = "3.6.1"
 clap = { version = "4.5.54", features = ["derive"] }
 directories = "6.0.0"
-dotenv = "0.15.0"
 ffmpeg-sidecar = "2.4.0"
 indicatif = "0.18.3"
 keyring = { version = "3.6.3", features = ["windows-native", "sync-secret-service", "linux-native"] }
 reqwest = { version = "0.13.1", features = ["blocking", "json"] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
+
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3.9", features = ["consoleapi", "processenv", "winbase", "wincon"] }
+
 [target.'cfg(target_env = "musl")'.dependencies]
 libdbus-sys = { version = "0.2.7", features = ["vendored"] }
