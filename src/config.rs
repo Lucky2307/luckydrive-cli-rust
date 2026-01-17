@@ -50,8 +50,7 @@ pub fn load_username() -> Result<String, String> {
 }
 
 pub static API_ENDPOINT: LazyLock<String> =
-    LazyLock::new(|| var("API_ENDPOINT").expect("API_ENDPOINT not set"));
-pub static SERVICE_NAME: LazyLock<String> =
-    LazyLock::new(|| var("SERVICE_NAME").expect("SERVICE_NAME not set"));
+    LazyLock::new(|| var("LUCKYDRIVE_API_ENDPOINT").expect("LUCKYDRIVE_API_ENDPOINT not set"));
+pub static SERVICE_NAME: LazyLock<String> = LazyLock::new(|| "LuckyDrive".to_string());
 
 pub static HTTP_CLIENT: LazyLock<Client> = LazyLock::new(|| Client::new());

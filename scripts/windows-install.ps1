@@ -1,3 +1,7 @@
+param (
+    [string]$Endpoint
+)
+
 $InstallDir = "C:\Program Files\LuckyDrive"
 $TempDir = Join-Path $env:TEMP "LuckyDrive"
 $ApiUrl = "https://api.github.com/repos/Lucky2307/luckydrive-cli-rust/releases/latest"
@@ -66,6 +70,9 @@ if ($CurrentPath -notlike "*$InstallDir*") {
     )
 }
 
+[System.Environment]::SetEnvironmentVariable("LUCKYDRIVE_API_ENDPOINT", "$Endpoint", 'Machine')
+
+
 Remove-Item $TempDir -Recurse -Force
 
-Write-Host "Installed successfully. Restart your terminal."
+Write-Host "Installed successfully."
