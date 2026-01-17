@@ -17,6 +17,7 @@ jobs:
           - os-name: Windows-x86_64
             runs-on: windows-latest
             target: x86_64-pc-windows-msvc
+            extension: .exe
 
     runs-on: ${{ matrix.platform.runs-on }}
     permissions:
@@ -36,4 +37,4 @@ jobs:
         with:
           executable-name: luckydrive-cli
           target: ${{ matrix.platform.target }}
-          extra-files: ".dist/${{ matrix.platform.os-name }}/*"
+          extra-files: ".dist/${{ matrix.platform.os-name }}/ffmpeg${{ matrix.platform.extension }}\n.dist/${{ matrix.platform.os-name }}/ffprobe${{ matrix.platform.extension }}"
