@@ -1,7 +1,6 @@
 use std::io::{Error, ErrorKind};
 
 use crate::config::{self, API_ENDPOINT, SERVICE_NAME};
-use crate::token::get_token;
 
 use keyring::Entry;
 use reqwest::StatusCode;
