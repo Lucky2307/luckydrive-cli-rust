@@ -77,10 +77,11 @@ fn get_upload_url(
             serde_json::from_str::<UploadUrlResponse>(&raw_body)
                 .map_err(|e| Error::new(ErrorKind::Other, format!("Failed to wrap JSON: {}", e)))
         }
-        e => {
+        _ => {
+            let raw_response = response.text().unwrap_or_default();
             return Err(Error::new(
                 ErrorKind::Other,
-                format!("Failed requesting upload url: {}", e),
+                format!("Failed requesting upload url: {}", raw_response),
             ));
         }
     }
