@@ -11,30 +11,13 @@ use serde::Deserialize;
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 struct LoginResponse {
-    user_name: String,
-    user_token: String,
+    username: String,
+    access_token: String,
 }
 
 // TODO: Handle error properly
 pub fn login(username: &str, password: &str) -> Result<String, Error> {
     let client = Client::new();
-    // let username = config::load_username().unwrap();
-    // let entry = Entry::new(&service_name, &username).unwrap();
-    // if let Ok(_) = entry.get_password() {
-    //   return Err("Already logged in".to_string())
-    // }
-    match get_token() {
-        Ok(_) => return Err(Error::new(ErrorKind::AlreadyExists, "Already logged in")),
-        Err(e) => match e.kind() {
-            ErrorKind::NotFound => {}
-            other_error => {
-                return Err(Error::new(
-                    ErrorKind::Other,
-                    format!("Error getting current user: {}", other_error),
-                ));
-            }
-        },
-    }
 
     let response = client
         .post(format!("{}/api/login", *API_ENDPOINT))
@@ -54,10 +37,10 @@ pub fn login(username: &str, password: &str) -> Result<String, Error> {
         StatusCode::OK => {
             let raw_body = response.text().unwrap_or_default();
             let json_body = serde_json::from_str::<LoginResponse>(&raw_body).unwrap();
-            let entry = Entry::new(&*SERVICE_NAME, &json_body.user_name).unwrap();
-            entry.set_password(&json_body.user_token).unwrap();
-            config::save_username(&json_body.user_name).unwrap();
-            Ok(format!("Logged in as {}", &json_body.user_name))
+            let entry = Entry::new(&*SERVICE_NAME, &json_body.username).unwrap();
+            entry.set_password(&json_body.access_token).unwrap();
+            config::save_username(&json_body.username).unwrap();
+            Ok(format!("Logged in as {}", &json_body.username))
         }
         StatusCode::NOT_FOUND => {
             return Err(Error::new(ErrorKind::NotFound, "Invalid credentials"));
