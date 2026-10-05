@@ -29,7 +29,7 @@ struct Cli {
 
 #[derive(Subcommand, Debug)]
 enum Commands {
-    Login { code: String },
+    Login { username: String, password: String },
     Logout,
     Upload { file_path: String },
 }
@@ -47,7 +47,7 @@ fn main() {
         return;
     }
     let command_result = match cli.command {
-        Some(Commands::Login { code }) => login(&code),
+        Some(Commands::Login { username, password }) => login(&username, &password),
         Some(Commands::Logout) => logout(),
         Some(Commands::Upload { file_path }) => upload(&file_path),
         None => Ok("No command provided.".to_string()),

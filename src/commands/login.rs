@@ -16,7 +16,7 @@ struct LoginResponse {
 }
 
 // TODO: Handle error properly
-pub fn login(code: &str) -> Result<String, Error> {
+pub fn login(username: &str, password: &str) -> Result<String, Error> {
     let client = Client::new();
     // let username = config::load_username().unwrap();
     // let entry = Entry::new(&service_name, &username).unwrap();
@@ -38,7 +38,7 @@ pub fn login(code: &str) -> Result<String, Error> {
 
     let response = client
         .post(format!("{}/api/login", *API_ENDPOINT))
-        .json(&serde_json::json!({ "code": code }))
+        .json(&serde_json::json!({ "username": username, "password": password }))
         .send()
         .map_err(|e| {
             if e.is_timeout() {
